@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>짭-MBTI 심리테스트</title>
+    <style>
+        :root {
+            --primary-color: #ff4757;
+            --secondary-color: #2f3542;
+            --bg-color: #f1f2f6;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--secondary-color);
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .input-group {
+            margin: 2rem 0;
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            border: 2px solid #dfe4ea;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #loading {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #result {
+            display: none;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px dashed #dfe4ea;
+        }
+
+        .mbti-tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .res-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .res-desc {
+            line-height: 1.6;
+            background: #fff9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .partner-box {
+            font-size: 0.9rem;
+            color: #747d8c;
+        }
+
+        .partner-name {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="main-ui">
+        <h1>🔍 짭-MBTI 심리학자</h1>
+        <p>당신의 이름을 입력하면<br>Z세대 감성 짭-MBTI를 분석해 드립니다.</p>
+        <div class="input-group">
+            <input type="text" id="username" placeholder="이름을 입력하세요" autocomplete="off">
+        </div>
+        <button onclick="startAnalysis()">분석 시작하기</button>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>빅데이터(사실 내 기분) 분석 중...</p>
+    </div>
+
+    <div id="result">
+        <div class="mbti-tag" id="res-mbti"></div>
+        <div class="res-name" id="res-title"></div>
+        <div class="res-desc" id="res-desc"></div>
+        <div class="partner-box">
+            👯 환상의 짝꿍: <span class="partner-name" id="res-partner"></span>
+        </div>
+        <button style="margin-top: 2rem; background: #2f3542;" onclick="location.reload()">다시 하기</button>
+    </div>
+</div>
+
+<script>
+    const mbtiData = [
+        {
+            "mbti": "BABO",
+            "name": "방금 들은 것도 까먹는 금붕어 유형",
+            "description": "방금 한 말도 3초 뒤에 '뭐라고?'라고 물어봐서 주변 사람 혈압 오르게 함. 머릿속에 지우개 있는 게 분명한데 본인만 해맑아서 더 킹받음.",
+            "partner": "KING"
+        },
+        {
+            "mbti": "KING",
+            "name": "자아도취에 절여진 공주/왕자 유형",
+            "description": "세상의 주인공은 나라고 믿으며 거울 보느라 약속 시간에 기본 30분은 늦음. 남의 고민 상담해줄 때도 결국 자기 자랑으로 끝내는 기적의 논리 소유자임.",
+            "partner": "BABO"
+        },
+        {
+            "mbti": "LAZY",
+            "name": "침대와 물아일체 된 지박령 유형",
+            "description": "숨쉬는 거 빼고 모든 게 귀찮아서 화장실 가는 것도 참다가 마지막 순간에 일어남. '나 오늘 바빠'라고 말할 때 사실 넷플릭스 볼 계획밖에 없음.",
+            "partner": "HOME"
+        },
+        {
+            "mbti": "GAEB",
+            "name": "개백수 감성의 갓생 호소인 유형",
+            "description": "할 일은 태산인데 계획만 3시간 짜다가 지쳐서 배달 음식 시키고 누워버림. SNS에는 세상에서 제일 바쁜 척하지만 실상은 유튜브 알고리즘의 노예임.",
+            "partner": "ZZAM"
+        },
+        {
+            "mbti": "ZZAM",
+            "name": "모든 귀찮은 일을 떠맡는 짬처리 전문 유형",
+            "description": "거절 못 하는 병에 걸려서 남이 시키는 온갖 잡무는 다 처리하고 혼자 현타 옴. 속으로는 욕을 한 바가지 하지만 입으로는 '웅 알겠어'라고 말하는 호구의 표본임.",
+            "partner": "GAEB"
+        },
+        {
+            "mbti": "SEXY",
+            "name": "섹시하고 싶지만 현실은 유교보이/걸 유형",
+            "description": "클럽 가고 싶다고 노래를 부르지만 막상 가면 구석에서 핸드폰만 보다가 기 빨려서 집에 옴. 노출 있는 옷 샀다가 부끄러워서 겉옷으로 다 가리고 다니는 패션 쫄보임.",
+            "partner": "CUTE"
+        },
+        {
+            "mbti": "CUTE",
+            "name": "전 국민에게 사랑받고 싶은 관종 유형",
+            "description": "귀여운 척이 몸에 배어 있어서 단톡방에서 이모티콘 없으면 대화 진행이 안 됨. 본인이 귀엽다는 걸 너무 잘 알고 이용해 먹으려다 가끔 뇌절해서 주변을 갑분싸 만듦.",
+            "partner": "SEXY"
+        },
+        {
+            "mbti": "BEEP",
+            "name": "필터링 없이 팩트 폭격하는 욕쟁이 유형",
+            "description": "말 한마디 할 때마다 주변 사람 뼈를 사정없이 때려서 순식간에 순살로 만들어버림. 본인은 솔직한 줄 알지만 남들이 보기엔 그냥 인성 터진 거라 아무도 고민 상담 안 함.",
+            "partner": "NOPE"
+        },
+        {
+            "mbti": "FOOD",
+            "name": "먹기 위해 태어난 진격의 돼지 유형",
+            "description": "점심 먹으면서 저녁 메뉴 고민하는 진정한 미식가(라고 쓰고 돼지라 읽음). 배부르다고 말하면서 손은 이미 후식 디저트 포크를 잡고 있는 이중 인격자임.",
+            "partner": "JMTG"
+        },
+        {
+            "mbti": "BOSS",
+            "name": "훈수 두는 게 인생의 낙인 꼰대 꿈나무 유형",
+            "description": "남이 뭘 하든 '근데 그건 좀 아니지 않아?'라며 굳이 안 해도 될 조언을 던짐. 정작 본인 인생은 제대로 못 살면서 남의 인생엔 거의 1타 강사급으로 참견함.",
+            "partner": "ASAP"
+        },
+        {
+            "mbti": "JMTG",
+            "name": "맛집 줄 서는 게 취미인 하이에나 유형",
+            "description": "전국 팔도 맛집 리스트를 꿰고 있으며 웨이팅 2시간도 불사하는 집념의 소유자임. 음식 사진 찍기 전엔 젓가락 대는 꼴을 못 보고 사진 잘 안 나오면 밥 안 먹음.",
+            "partner": "FOOD"
+        },
+        {
+            "mbti": "SOLO",
+            "name": "자발적 아싸인 척하는 모태솔로 유형",
+            "description": "연애 안 하는 게 아니라 안 하는 거라고 정신 승리하지만 밤마다 로맨스 웹툰 보며 눈물 흘림. 눈은 히말라야 꼭대기만큼 높은데 정작 본인 매력은 지하 주차장에 있음.",
+            "partner": "LOVE"
+        },
+        {
+            "mbti": "CAFE",
+            "name": "카공족인 척하는 수다쟁이 유형",
+            "description": "노트북 들고 카페 가서 5분 공부하고 3시간 동안 인스타 피드 구경만 함. 커피 한 잔 시켜놓고 온갖 감성 사진 다 찍어서 올리느라 얼음 다 녹을 때까지 안 마심.",
+            "partner": "COOL"
+        },
+        {
+            "mbti": "HELL",
+            "name": "운동은 안 하고 장비만 풀세팅인 헬린이 유형",
+            "description": "헬스장 등록한 첫날에 언더아머부터 풀세트로 맞추고 거울 셀카만 50장 찍음. 근육통 오면 '아 오늘 운동 제대로 했다'며 뿌듯해하지만 실상은 스트레칭만 함.",
+            "partner": "SICK"
+        },
+        {
+            "mbti": "SICK",
+            "name": "365일 어디가 아픈 개복치 유형",
+            "description": "비 오면 허리 아프고 해 뜨면 눈부셔 머리 아프다는 핑계 대며 약속 파토의 달인임. 본인이 아픈 걸 온 세상이 알아주길 바라며 카톡 상태메시지에 늘 병원 표시 있음.",
+            "partner": "HELL"
+        },
+        {
+            "mbti": "NOPE",
+            "name": "모든 제안을 일단 거절하고 보는 프로 거절러",
+            "description": "누가 뭐 하자고 하면 뇌를 거치기도 전에 '아니', '싫어'부터 튀어나옴. 거절하는 게 습관이라 나중엔 본인이 뭘 거절했는지도 까먹고 혼자 남겨지면 서운해함.",
+            "partner": "BEEP"
+        },
+        {
+            "mbti": "ASAP",
+            "name": "성격 급해서 숨 넘어가는 빨리빨리 유형",
+            "description": "엘리베이터 닫힘 버튼 1초에 5번 누르고 웹사이트 3초 안에 안 뜨면 창 닫아버림. 남들 말 끝날 때까지 못 기다리고 중간에 말 끊어서 본론만 말하라고 닦달함.",
+            "partner": "BOSS"
+        },
+        {
+            "mbti": "WHAT",
+            "name": "영혼 가출해서 리액션만 남은 로봇 유형",
+            "description": "남이 진지하게 말할 때 '헐 대박', '진짜?', '웃기다' 세 단어로 모든 대화를 방어함. 눈은 웃고 있지만 머릿속으론 오늘 저녁 뭐 먹을지만 생각하고 있는 투명한 영혼임.",
+            "partner": "REAL"
+        },
+        {
+            "mbti": "COOL",
+            "name": "쿨한 척하지만 뒤에서 뒤끝 장난 아닌 소심이 유형",
+            "description": "누가 기분 나쁘게 하면 '괜찮아~'라고 웃으며 말하지만 일기장에 그 사람 이름 3페이지 씀. 쿨해 보이고 싶어서 양보하는 척하지만 속으로는 손익 계산기 존나게 두드림.",
+            "partner": "CAFE"
+        },
+        {
+            "mbti": "HOME",
+            "name": "현관문 나가는 순간 기 빨리는 집순이/집돌이",
+            "description": "집 밖은 위험하다고 믿으며 편의점 가는 것도 큰 결심이 필요한 중대한 거사임. 약속 취소되면 겉으로는 아쉬운 척하지만 속으로는 환호성 지르며 바로 잠옷 갈아입음.",
+            "partner": "LAZY"
+        }
+    ];
+
+    function hashCode(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash);
+    }
+
+    function startAnalysis() {
+        const name = document.getElementById('username').value.trim();
+        if (!name) {
+            alert('이름을 입력해야 분석을 하든 말든 하지!');
+            return;
+        }
+
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+
+        setTimeout(() => {
+            const index = hashCode(name) % mbtiData.length;
+            const resultData = mbtiData[index];
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+
+            document.getElementById('res-mbti').innerText = resultData.mbti;
+            document.getElementById('res-title').innerText = resultData.name;
+            document.getElementById('res-desc').innerText = resultData.description;
+            document.getElementById('res-partner').innerText = resultData.partner;
+        }, 1200);
+    }
+</script>
+
+</body>
+</html>
